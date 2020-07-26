@@ -5,7 +5,7 @@ const PORT = process.env.PORT || 8080
 function noop () {}
 
 function heartbeat () {
-  console.log('pong')
+  //console.log('pong')
   this.isAlive = true
 }
 
@@ -16,8 +16,8 @@ console.log(`Running on port ${PORT}`)
 wss.on('connection', function connection (ws, req) {
   console.log(new Date() + ': New Connection from ' + req.socket.remoteAddress)
 
-  //ws.isAlive = true
-  //ws.on('pong', heartbeat)
+  ws.isAlive = true
+  ws.on('pong', heartbeat)
 
   const namespace = req.headers['namespace']
 
@@ -55,22 +55,26 @@ wss.on('connection', function connection (ws, req) {
     })
     console.log('-------END------')
   })
+
+  ws.on('close', function () {
+    console.log(
+      new Date() + ': Connection Ended from ' + req.socket.remoteAddress
+    )
+  })
 })
 
-// const interval = setInterval(function ping () {
-//   wss.clients.forEach(function each (ws) {
-//     if (ws.isAlive === false) {
-//       console.log('terminating bc they didnt ping back in time')
-//       return ws.terminate()
-//     }
+const interval = setInterval(function ping () {
+  wss.clients.forEach(function each (ws) {
+    if (ws.isAlive === false) {
+      console.log('closing bc they didnt ping back in time')
+      return ws.close()
+    }
 
-//     ws.isAlive = false
-//     ws.ping(noop)
-//   })
-// }, 60000)
+    ws.isAlive = false
+    ws.ping(noop)
+  })
+}, 60 * 1000)
 
 wss.on('close', function close () {
-  console.log(new Date() + ': Connection closed')
-
-  //clearInterval(interval)
+  clearInterval(interval)
 })
